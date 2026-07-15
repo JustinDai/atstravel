@@ -8,7 +8,7 @@ $(function(){
 	form=$('#signInForm'),
 	deconnexion = $('#decnx55');
 	nav = $('#cnxDcnx');
-	
+
 	// If the 55Id cookie returns a value, we change the text of the link in the nav
 	if(!!userId && userId.length > 0){
 		nav.text('Sign-out');
@@ -27,29 +27,26 @@ $(function(){
 	});
 
 	if(/login\.html/.test(window.location.pathname)){
-		
+
 		// Connection
 		cnx.click(function(e){
 			
 			e.preventDefault();
 			
-			// We check that the login entered is in the list of users
+			// On vérife que le login saisi se trouve bien dans la liste des utlisateurs
 			for(var i = 0; i<usersList.length; i++){
 				if(usersList[i]['login'] == login.val()){
-					var connected_user_id = usersList[i];
+					var tmp = usersList[i];
 				}
 			}
-			
-			// If this is the case, we compare the entered password with the saved one.
-			if(!!connected_user_id){
-				// If it matches we connect the user (creation of a cookie containing the ID)
-				if(mdp.val()==connected_user_id.password){
-					document.cookie = '55ID=' + connected_user_id.id+ ';path=/';
-					document.location.href="index.html";
-					/* tracking of login begin
-					*/
 
-					// tracking of login end
+			// If this is the case, we compare the entered password with the saved one.
+			if(!!tmp){
+				// If it matches we connect the user (creation of a cookie containing the ID)
+				if(mdp.val()==tmp.password){
+					window.dataLayer.push({'event':'login', 'method':'form'});
+					document.cookie = '55ID=' + tmp.id+ ';path=/';
+					document.location.href="index.html";
 				} else { // If the password does not match
 					msg.html('<p style="color:red;font-weight:bold;">Authentication failed : check your username and password and try again</p>');
 				}
@@ -68,7 +65,7 @@ $(function(){
 			function(element){
 				for(var v=0;v<travelDestinations.length;v++)
 				{
-					if(element.getAttribute("href").match(travelDestinations[v].hashName)!==null)
+					if(element.getAttribute("href").match(travelDestinations[v].name.toLowerCase())!==null)
 					{
 						promotions.push(
 							{
@@ -79,7 +76,7 @@ $(function(){
 								"item_variant": "6 nights",
 								'promotion_id': travelDestinations[v].id,
 								'promotion_name': 'carousel',
-								'creative_name': travelDestinations[v].hashName,
+								'creative_name': travelDestinations[v].name,
 								'creative_slot': index,
 								'location_id': index,
 								'index': index,
@@ -92,36 +89,34 @@ $(function(){
 				}
 			}
 		);
-		/* tracking of Ecommerce promotion views action begin
-		* use promotions JS variable to get promotions details
-		*/
-
-		// tracking of Ecommerce promotion views action end
+		window.dataLayer.push({ ecommerce: null });  // Clear the previous ecommerce object.
+		window.dataLayer.push({
+			'event': 'view_promotion',
+			'ecommerce': {
+				'items': promotions
+			}
+		});
 
 		$(".carousel-inner a").on('click',function(e){
 			var destination = $(this).attr('href').split('#');
+			window.dataLayer.push({'event':'carousel_click','destination':destination[1]});
 			for(var v=0; v<promotions.length;v++){
-				if(promotions[v].creative_name.match(destination[1])!== null)
+				if(promotions[v].item_name.toLowerCase().match(destination[1])!== null)
 				{
-					/* tracking of Ecommerce promotion click action begin
-                    * use promotions[v] JS variable to get promotions details
-                    */
-
-					// tracking of Ecommerce promotion click action end
+					//window.dataLayer.push({ ecommerce: null });  // Clear the previous ecommerce object.
+					window.dataLayer.push({
+						'event': 'select_promotion',
+						'ecommerce': {
+							'items': [promotions[v]]
+						}
+					});
 					break;
 				}
 			}
 		});
-
-		$("#viewDestination a").on('click',function(e){
-			/* tracking of View Destinations button click begin
-			*/
-
-			// tracking of View Destinations button click end
-		});
 		
 	}
-
+	//Destinations list display
 	if(/destinations\.html/.test(window.location.pathname)){
 		
 		$('.videos').on('click',function(e){
@@ -146,20 +141,21 @@ $(function(){
 		$('#destinationsVideos').on('click', function(){
 			$(this).html('');
 			$(this).fadeOut(500);
+				
+				window.dataLayer.push({
+					"event": "video_closed"
+				});
+			
 		});
 			
 		var location = window.location.search.replace('?search=',''), list="all", cat;
-		
+
 		// Addition of the parameter in the url during a search
 		 $('#search_destination').on('submit', function(e){
 			 e.preventDefault();
 			 var kw = $(this).find('input[type="search"]').val();
+			 window.dataLayer.push({'event':'search','search_term':kw});
 			 window.location.href = "destinations.html?search="+kw;
-			 /* tracking of search begin
-			 * use kw JS variable to get the search keyword
-			 */
-
-			 // tracking of search end
 		});
 		
 		var regex = new RegExp(location, 'gi');
@@ -220,13 +216,13 @@ $(function(){
 				index++;
 			 }
 		});
-		/* tracking of Ecommerce product views in list action begin
-		* use products JS variable to get products details
-		* use list JS variable to set list value in products.
-		*/
 
-		// tracking of Ecommerce product views in list end
-
+		window.dataLayer.push({
+			"event": "view_item_list",
+			'ecommerce': {
+				'items' : products
+			}
+		});
 		// Add a listener on each button details to send an event dL select_item on the click
 		document.querySelectorAll('a[href*="details.html"]').forEach(
 			function(element){
@@ -234,19 +230,21 @@ $(function(){
 					for(var v=0; v<products.length;v++){
 						if( event.target.getAttribute("href").match( products[v].item_name.toLocaleLowerCase() )!==null )
 						{
-							/* tracking of Ecommerce product click in list action begin
-							* use products[v] JS variable to get products details
-							* use list JS variable to set list value in actionField.
-							*/
-
-							// tracking of Ecommerce product click in list end
+							window.dataLayer.push({'ecommerce':null});
+							window.dataLayer.push({
+								'event':'select_item',
+								'ecommerce': {
+									'items': [products[v]]
+								}
+							});
 							break;
 						}
 					}
 				});
 			});
 	}
-
+	
+	/* PAGE DETAILS */
 	if(/details\.html/.test(window.location.pathname)){
 				
 		$('#destinations > *').hide();
@@ -258,7 +256,7 @@ $(function(){
 		} else {
 			document.location.href="destinations.html"; 
 		}
-	
+
 		// If the basket is not defined, we create it
 		var cart55 = getCookie('55Basket') ? JSON.parse(getCookie('55Basket')) : [];
 
@@ -269,7 +267,7 @@ $(function(){
 			// We retrieve the name of the opinion clicked in the data-name attribute and the quantity chosen
 			var name = document.location.hash.substr(1),
 			quantity = parseInt($(this).parent().find('select').val());
-			
+
 			// We browse the table of destinations to retrieve the information of the destination
 			for(var i = 0; i<travelDestinations.length; i++){
 				
@@ -285,10 +283,10 @@ $(function(){
 			price = travelD.price;
 			category = travelD.category;
 			img = travelD.img;
-			
+
 			// Control variable to determine whether to add to the basket or increase the quantity
 			var newItem = true;
-			
+
 			// If the item already exists in the cart, the quantity is increased and the indicator is set to false
 			cart55.forEach(function(travel){
 				if(travel.name===name){
@@ -296,7 +294,7 @@ $(function(){
 						newItem = false;
 				}
 			});
-			
+
 			// If the control variable is still true, it means that it is a new article to add
 			if(newItem === true){
 				cart55.push({id:id,category:category,name:name,price:price,quantity:quantity,img:img});
@@ -311,15 +309,21 @@ $(function(){
 			document.cookie = '55Basket=' + JSON.stringify(cart55)+ ';path=/';
 			
 			 $('#continueShoppingOverlay').fadeIn().delay(5000).fadeOut();
-			/* tracking of Ecommerce product add to cart action begin
-            * use id JS variable to get product id
-            * use category JS variable to get product category
-            * use name JS variable to get product name
-            * use price JS variable to get product price
-            * use quantity JS variable to get product quantity
-            */
 
-			// tracking of Ecommerce product add to cart action end
+			window.dataLayer.push({'ecommerce':null});
+			window.dataLayer.push({
+				'event':'add_to_cart',
+				'ecommerce':{
+					'items' : [{
+						'item_id':id,
+						'item_category':category,
+						'item_name':name,
+						'price':price,
+						'quantity':quantity,
+					}]
+				}
+
+			});
 		});
 			
 	}
@@ -349,11 +353,11 @@ $(function(){
 				</tr>');
 				
 		});
-		var totalPrice = calculate($('.totalPrice')) ;
-
+		
+	
 		panier.append(
 			'<tr>\
-				<td id="basketPrice" colspan=3>Total : $'+totalPrice+'</td>\
+				<td id="basketPrice" colspan=3>Total : $'+calculate($('.totalPrice'))+'</td>\
 				<td id="basketCheckout" colspan=2><a href="checkout.html">Checkout</a></td>\
 			</tr>'
 		);
@@ -362,6 +366,7 @@ $(function(){
 		if(JSON.parse(getCookie('55Basket')) || cart55.length <1) {
 
 			cart55.forEach(function (travel) {
+
 				products.push({
 					"item_id": travel.id,
 					"item_category": travel.category,
@@ -371,12 +376,14 @@ $(function(){
 					"item_variant": "6 nights"
 				});
 			});
-			/* tracking of Ecommerce product view cart action begin
-			* use totalPrice JS variable to get the total basket price
-			* use products JS variable to get products details
-			*/
-
-			// tracking of Ecommerce product view cart action end
+			window.dataLayer.push({ecommerce: null});
+			window.dataLayer.push({
+				'event': 'view_cart',
+				'value': calculate($('.totalPrice')),
+				'ecommerce': {
+					'items': products
+				}
+			});
 			$('.remove').on('click', function(e){
 				e.preventDefault();
 
@@ -386,11 +393,11 @@ $(function(){
 				var name = $(this).data().name;
 
 				// We loop in the way to find the index of the object to which the name belongs in the array
-				var productRemoved = {};
+				var toRemove = {};
 				for(var i = 0; i < cart55.length; i++) {
 					if(cart55[i].name==name){
 						// We remove the found object from the array
-						productRemoved= cart55.splice(i, 1)[0];
+						toRemove= cart55.splice(i, 1)[0];
 					}
 				}
 				// If more than one article we delete the line, if it is the only article we delete the table containing the basket
@@ -413,27 +420,36 @@ $(function(){
 					$('#basket_content').html('<p id="emptyCart">No items in your cart : <a href="destinations.html">Select your dream destinations</a></p>');
 					$('#navBasketItems span').text('');
 				}
-				/* tracking of Ecommerce product remove from cart action begin
-                * use productRemoved JS variable to get removed product detail
-                */
 
-				// tracking of Ecommerce product remove from cart action end
+				window.dataLayer.push({'ecommerce':null});
+				window.dataLayer.push({
+					'event':'remove_from_cart',
+					'ecommerce':{
+						items:[{
+							'item_id':toRemove.id,
+							'item_category':toRemove.category,
+							'item_name':toRemove.name,
+							'price':toRemove.price,
+							'quantity':toRemove.quantity,
+						}]
+					}
+				});
 			});
 		}
 
 	} // End of basket secton script
-	
+
 	// Checkout (payment and shipping option)
 	if(/checkout\.html/.test(window.location.pathname)){
-		
+
 		// Retrieving basket information from the 55Basket cookie
 		var cart55 = JSON.parse(getCookie('55Basket'));
-		
+
 		// If cart55 return null, the cart is empty, we return to destinations
 		if(cart55 ==null){
 			window.location.href="destinations.html";
-		} 
-		
+		}
+
 		// If an address has already been entered, we retrieve it to display it in the form otherwise empty object
 		var userInformations  = getCookie('55UserInformations') ? JSON.parse(getCookie('55UserInformations')) : {};
 		
@@ -448,6 +464,7 @@ $(function(){
 
 		// Loop to display all the products in the basket
 		cart55.forEach(function(travel){
+				
 			$('#checkoutTable').append('<tr>\
 					<td>'+travel.id+'</td>\
 					<td>'+travel.category+'</td>\
@@ -457,7 +474,7 @@ $(function(){
 					<td class="totalPrice">$'+travel.price * travel.quantity+'</td>\
 				</tr>');
 		});
-		
+
 		// Calculation of the total basket price
 		$('#checkoutTable').append(
 			'<tr><td id="checkoutPrice" colspan=6>Total Price : $'+calculate($('.totalPrice'))+'</td></tr>');
@@ -485,59 +502,60 @@ $(function(){
 			zip = $('#shippingForm #zip').val(),
 			city = $('#shippingForm #city').val();
 			
-			if(name != '' && adress!='' && zip != '' && city != ''){
-				userInformations = {
-					'name':name,
-					'adress':adress,
-					'zip':zip,
-					'city':city
-				}
+				if(name != '' && adress!='' && zip != '' && city != ''){
+					userInformations = {
+						'name':name,
+						'adress':adress,
+						'zip':zip,
+						'city':city
+					}
+					
+					document.cookie = '55UserInformations=' + JSON.stringify(userInformations)+ ';path=/';
+			
+					$('#shippingForm #name').attr('readonly', true);
+					$('#shippingForm #adress').attr('readonly', true);
+					$('#shippingForm #zip').attr('readonly', true);
+					$('#shippingForm #city').attr('readonly', true);
 
-				document.cookie = '55UserInformations=' + JSON.stringify(userInformations)+ ';path=/';
-
-				$('#shippingForm #name').attr('readonly', true);
-				$('#shippingForm #adress').attr('readonly', true);
-				$('#shippingForm #zip').attr('readonly', true);
-				$('#shippingForm #city').attr('readonly', true);
-
-				$('#confirmReservation').html(
-					'<a  class="btn btn-primary" id="submitButton" href="thankyou.html?price='+calculate($('.totalPrice'))+'"><h3>Confirm order</h3></a></td>');
-
-				$('#paymentMethod').slideDown();
-
-				/* tracking of virtual page view on payment page begin
-				*/
-
-				// tracking of virtual page view on payment page end
-				history.pushState({}, 'Payment | ATS Travel Website', 'payment.html');
-				var cart55 = getCookie('55Basket') ? JSON.parse(getCookie('55Basket')) : [];
-				var products=[];
-				cart55.forEach(function(travel){
-					products.push({
-						"item_id":travel.id,
-						"item_category":travel.category,
-						"price": travel.price,
-						"item_name": travel.name,
-						"quantity": travel.quantity,
-						"item_variant":"6 nights"
+					$('#confirmReservation').html(
+						'<a  class="btn btn-primary" id="submitButton" href="thankyou.html?price='+calculate($('.totalPrice'))+'"><h3>Confirm order</h3></a></td>');
+					
+					$('#paymentMethod').slideDown();
+					history.pushState({}, 'Payment | Factory Travel Website', 'payment.html');
+					var cart55 = getCookie('55Basket') ? JSON.parse(getCookie('55Basket')) : [];
+					var products=[];
+					cart55.forEach(function(travel){
+						products.push({
+							"item_id":travel.id,
+							"item_category":travel.category,
+							"price": travel.price,
+							"item_name": travel.name,
+							"quantity": travel.quantity,
+							"item_variant":"6 nights"
+						});
 					});
-				});
-				/* tracking of Ecommerce second checkout step action begin
-				* use products JS variable to get the basket products details
-				*/
-
-				// tracking of Ecommerce second checkout step action end
-				document.getElementById('submitButton').addEventListener('click',function(){
-					/* tracking of Ecommerce payment checkout option action begin
-					* use products JS variable to get the basket products details
-					*/
-
-					// tracking of Ecommerce payment checkout option action end
-				});
-			} else {
-				$("#errareMSG").html('<p>Please complete all the required fields</p>');
-				$("#errareMSG").show(500).delay(5000).hide(500);
-			}
+					window.dataLayer.push({'ecommerce':null});
+					window.dataLayer.push({
+						'event': 'checkout_progress',
+						'ecommerce': {
+							'checkout_step':"2",
+							'items': products
+						}
+					});
+					document.getElementById('submitButton').addEventListener('click',function(){
+						window.dataLayer.push({'ecommerce':null});
+						window.dataLayer.push({
+							'event': 'add_payment_info',
+							'ecommerce': {
+								'payment_type':"CB",
+								'items': products
+							}
+						});
+					});
+				} else {
+					$("#errareMSG").html('<p>Please complete all the required fields</p>');
+					$("#errareMSG").show(500).delay(5000).hide(500);
+				}
 			
 			}
 			
@@ -558,14 +576,17 @@ $(function(){
 			$('#orderConfirmed').append(' <p><a href="destinations.html">Select destinations</a><p>');
 			var cancelOrder = order55.pop();
 			document.cookie = 'order55=' + JSON.stringify(order55)+ ';path=/';
-			/* tracking of Ecommerce refund action begin
-			* use cancelOrder.orderRef JS variable to get the canceled order Id
-			*/
-
-			// tracking of Ecommerce refund action end
+			dataLayer.push({ ecommerce: null });  // Clear the previous ecommerce object.
+			dataLayer.push({
+				'event': 'refund',
+				'ecommerce': {
+					'transaction_id': cancelOrder.orderRef // Transaction ID. Required for purchases and refunds.
+				}
+			});
 		});
-	}
 		
+	}
+
 	// Global script
 	if(!!getCookie('55Basket')){
 		var cart55 = JSON.parse(getCookie('55Basket'));
@@ -574,8 +595,8 @@ $(function(){
 		} else {
 			$('#navBasketItems span').text('');
 		}
-	} 
-	
+	}
+
 	// Newsletter subscription
 	var input = $('#newsletter-form input[type="text"]');
 	reponse = $('footer #reponse'),
@@ -587,12 +608,11 @@ $(function(){
 		
 		if(!!patt.test(input.val())){
 			reponse.html('<p class="ok_msg">Thank you for joining our mailing list').fadeIn(500).delay(1500).fadeOut(500);
-			/* tracking of newsletter subscription begin
-			*/
-
-			// tracking of newsletter subscription end
+			dataLayer.push({'event':'generate_lead', 'currency':'USD', 'value':100});
 		} else {
 			reponse.html('<p class="error_msg">Subscription failed, check your email adress').fadeIn(500).delay(1500).fadeOut(500);
 		}
+		
 	 });
+	 
 });
