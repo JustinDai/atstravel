@@ -1,26 +1,27 @@
-/* tracking of Page begin
-*/
-
-// tracking of Page end
+window.dataLayer = window.dataLayer || [];
+if(!!getCookie('55ID') && getCookie('55ID') != ''){
+	window.dataLayer.push({'user_id': getCookie('55ID')});
+}
+window.dataLayer.push({'event':'page_view', 'page_path':document.location.pathname,	"currency": "USD", "analytics_cookies_allowed":true});
 
 var usersList =[
-	{"id": 1055,"login": "ATS","password": "ATS@55!"},
+	{"id": 1055,"login": "Factory","password": "Factory@55!"},
 	{"id": 2055,"login": "Bac","password": "Bac@55!"},
 	{"id": 3055,"login": "toto","password": "toto"},
 	{"id": 5555,"login": "Nifties","password": "fiftyfive55"}
 ];
 
-var travelDestinations = [
-	{"id": "city001","name":"Switzerland", "hashName":"switzerland","category": "city","price":799, 'img':'switzerland', 'video':'https://www.youtube.com/embed/jDNbTU1O-oM'},
-	{"id": "city002","name":"Sevilla", "hashName":"sevilla","category": "city","price":799,'img':'sevilla','video':'https://www.youtube.com/embed/LnV7IkZU-OY'},
-	{"id": "city003","name":"Providence", "hashName":"providence","category": "city","price":799,'img':'prov', 'video':'https://www.youtube.com/embed/_mXvFKLsacs'},
-	{"id": "city004","name":"San Francisco", "hashName":"sanfrancisco","category": "city","price":799,'img':'sf','video':'https://www.youtube.com/embed/OO1NYarwqa0'},
-	{"id": "city005","name":"Paris", "hashName":"paris","category": "city","price":999,'img':'paris','video':'https://www.youtube.com/embed/AQ6GmpMu5L8'},
-	{"id": "isl001","name":"Lanzarote", "hashName":"lanzarote","category": "island","price":799,'img':'lanzarote', 'video':'https://www.youtube.com/embed/AX8uI7seMW0'},
-	{"id": "isl002","name":"Mallorca", "hashName":"mallorca","category": "island","price":799,'img':'mallorca','video':'https://www.youtube.com/embed/9R38Xx5Va1Q'},
-	{"id": "isl003","name":"Puerto Rico", "hashName":"puertorico","category": "island","price":799,'img':'pr','video':'https://www.youtube.com/embed/MtC34MJfYQI'},
-	{"id": "isl004","name":"Fuerteventura", "hashName":"fuerteventura","category": "island","price":799,'img':'fuerte', 'video':'https://www.youtube.com/embed/4QJ4ALxD978'},
-	{"id": "isl005","name":"Reunion", "hashName":"reunion","category": "island","price":1200,'img':'run','video':'https://www.youtube.com/embed/g0mwkiXIaBo'}
+var travelDestinations =[
+	{"id": "city001","name":"Switzerland","category": "city","price":799, 'img':'switzerland', 'video':'https://www.youtube.com/embed/jDNbTU1O-oM'},
+	{"id": "city002","name":"Sevilla","category": "city","price":799,'img':'sevilla','video':'https://www.youtube.com/embed/LnV7IkZU-OY'},
+	{"id": "city003","name":"Providence","category": "city","price":799,'img':'prov', 'video':'https://www.youtube.com/embed/_mXvFKLsacs'},
+	{"id": "city004","name":"San Francisco","category": "city","price":799,'img':'sf','video':'https://www.youtube.com/embed/OO1NYarwqa0'},
+	{"id": "city005","name":"Paris","category": "city","price":999,'img':'paris','video':'https://www.youtube.com/embed/AQ6GmpMu5L8'},
+	{"id": "isl001","name":"Lanzarote","category": "island","price":799,'img':'lanzarote', 'video':'https://www.youtube.com/embed/AX8uI7seMW0'},
+	{"id": "isl002","name":"Mallorca","category": "island","price":799,'img':'mallorca','video':'https://www.youtube.com/embed/9R38Xx5Va1Q'},
+	{"id": "isl003","name":"Puerto Rico","category": "island","price":799,'img':'pr','video':'https://www.youtube.com/embed/MtC34MJfYQI'},
+	{"id": "isl004","name":"Fuerteventura","category": "island","price":799,'img':'fuerte', 'video':'https://www.youtube.com/embed/4QJ4ALxD978'},
+	{"id": "isl005","name":"Reunion","category": "island","price":1200,'img':'run','video':'https://www.youtube.com/embed/g0mwkiXIaBo'}
 ];
 
 function getCookie(key) {
@@ -41,7 +42,7 @@ function calculate(rowPrice){
 }
 
 
-//Tracking on a travel detail page load
+
 if(/details\.html/.test(window.location.pathname)){
 	
 	var hash = window.location.hash.substr(1);
@@ -61,12 +62,20 @@ if(/details\.html/.test(window.location.pathname)){
 			var travelDestination = travelDestinations[i];
 		}
 	}
-	/* tracking of Ecommerce detail action begin
-	* use travelDestination JS variable to get travel details
-	* use listName JS variable to get the name of the list if needed
-	*/
-
-	// tracking of Ecommerce detail action end
+	
+	window.dataLayer.push({
+		'event': 'view_item',
+		'ecommerce':{
+			'items': [{
+				"item_list_name":listName,
+				"item_id": travelDestination.id,
+				"item_category": travelDestination.category,
+				"price": travelDestination.price,
+				"item_name": travelDestination.name,
+				"item_variant": "6 nights"
+			}]
+		}
+	});
 }
 
 
@@ -86,17 +95,20 @@ if(/checkout\.html/.test(window.location.pathname)){
 					"item_variant":"6 nights"
 			});
 		});
-		/* tracking of first checkout step action begin
-		* use products JS variable to get basket products detail
-		*/
+		window.dataLayer.push({'ecommerce':null});
+		window.dataLayer.push({
+			'event': 'begin_checkout',
+			'ecommerce': {
+				'items': products
+			}
+		});
 
-		// tracking of first checkout step action end
 	}
 	
 }
 
 if(/thankyou\.html/.test(window.location.pathname)){
-	var totalPrice = document.URL.match(/price=([^&]+)/)[1];
+	
 	var order55 = JSON.parse(getCookie('order55')) || [];
 	
 	if(!getCookie('55Basket')){
@@ -127,11 +139,17 @@ if(/thankyou\.html/.test(window.location.pathname)){
 			"item_variant":"6 nights"
 		});
 	});
-	/* tracking of Ecommerce purchase action begin
-	* use order55[order55.length -1].orderRef to get transaction id
-	* use totalPrice to get the transaction price
-	* use products JS variable to get travel details
-	*/
+	window.dataLayer.push({'ecommerce':null});
+	window.dataLayer.push({
+		'event':'purchase',
+		'ecommerce':{
+			'currency':'USD',
+			"transaction_id": order55[order55.length -1].orderRef,
+			"shipping": 0,
+			"value": 1000,
+			"tax": 0,
+			'items': products
+		}
 
-	// tracking of Ecommerce purchase action end
+	});
 }
